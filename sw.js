@@ -1,6 +1,7 @@
-const CACHE = 'flashcard-v1';
+const CACHE = 'flashcard-v2';
 const FILES = [
-  './flashcard-app.html',
+  './',
+  './index.html',
   './manifest.json',
   './icon.svg'
 ];
