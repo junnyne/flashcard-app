@@ -463,6 +463,69 @@
   /* scrollbar hidden but functional */
   .word-list::-webkit-scrollbar { display: none; }
 
+  /* HISTORY PANEL */
+  .history-panel {
+    display: none;
+    width: 100%;
+    max-width: 480px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .history-panel.active { display: flex; }
+
+  .history-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 480px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .history-list::-webkit-scrollbar { display: none; }
+
+  .history-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideIn 0.2s ease;
+  }
+
+  .history-left { display: flex; flex-direction: column; gap: 4px; }
+  .history-date { font-size: 0.82rem; color: var(--muted); }
+  .history-score { font-size: 0.95rem; }
+  .history-score .h-right { color: var(--green); font-weight: 600; }
+  .history-score .h-wrong { color: var(--red); font-weight: 600; }
+
+  .history-pct {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+  }
+
+  .btn-clear-history {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-clear-history:hover { background: var(--red); color: #fff; }
+
   /* MODAL */
   .modal-overlay {
     display: none;
@@ -519,6 +582,7 @@
   <button class="tab active" onclick="switchTab('add')">➕ Thêm từ</button>
   <button class="tab" onclick="switchTab('study')" id="studyTab">📖 Học</button>
   <button class="tab" onclick="switchTab('quiz')" id="quizTab">✍️ Kiểm tra</button>
+  <button class="tab" onclick="switchTab('history')" id="historyTab">📋 Lịch sử</button>
 </div>
 
 <!-- ADD PANEL -->
@@ -645,6 +709,15 @@
   <button class="btn" style="color:var(--muted);background:transparent;font-size:0.85rem;" onclick="backToAdd()">← Thêm từ mới</button>
 </div>
 
+<!-- HISTORY PANEL -->
+<div class="history-panel" id="historyPanel">
+  <div class="history-title">📋 Lịch sử kiểm tra</div>
+  <div class="history-list" id="historyList">
+    <p class="empty-msg">Chưa có lịch sử nào. Hãy hoàn thành một bài kiểm tra!</p>
+  </div>
+  <button class="btn-clear-history" onclick="clearHistory()">🗑 Xóa toàn bộ lịch sử</button>
+</div>
+
 <div class="modal-overlay" id="deleteModal">
   <div class="modal">
     <div class="modal-title">Xóa từ này?</div>
@@ -660,6 +733,7 @@
 
 <script>
   let words = JSON.parse(localStorage.getItem('flashcard_words') || '[]');
+  let history = JSON.parse(localStorage.getItem('flashcard_history') || '[]');
   let queue = [];
   let current = 0;
   let totalCards = 0;
@@ -729,6 +803,13 @@
       } else {
         showToast('Hãy hoàn thành học trước rồi mới kiểm tra!');
       }
+      return;
+    }
+    if (tab === 'history') {
+      hideAll();
+      document.getElementById('historyPanel').classList.add('active');
+      document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===3));
+      renderHistory();
       return;
     }
     const panels = { add: 'addPanel', study: 'studyPanel', quiz: 'quizPanel' };
@@ -1043,6 +1124,7 @@
   function showQuizResult() {
     quizDone = true;
     studyDone = false;
+    saveHistory(quizRight, quizWrong, quizQueue.length, quizQueue.map(w => w.en));
     words.forEach(w => { w.learned = false; });
     saveWords(); renderList();
     hideAll();
@@ -1070,9 +1152,67 @@
 
   function restartQuiz() { startQuiz(knownWords.length > 0 ? knownWords : words); }
 
+  // ── HISTORY ──
+  function saveHistory(right, wrong, total, wordKeys) {
+    const today = new Date().toISOString().slice(0, 10);
+    const key = [...wordKeys].sort().join(',');
+    const exists = history.find(h => h.date === today && h.key === key);
+    if (exists) return; // only save first attempt of this quiz on this day
+    const pct = total ? Math.round(right / total * 100) : 0;
+    const words_snapshot = quizQueue.map(w => ({ en: w.en, vi: w.vi }));
+    history.unshift({ date: today, right, wrong, total, pct, key, words: words_snapshot });
+    localStorage.setItem('flashcard_history', JSON.stringify(history));
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (history.length === 0) {
+      list.innerHTML = '<p class="empty-msg">Chưa có lịch sử nào. Hãy hoàn thành một bài kiểm tra!</p>';
+      return;
+    }
+    list.innerHTML = '';
+    history.forEach(h => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      const d = new Date(h.date);
+      const label = d.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
+      const emoji = h.pct >= 80 ? '🏆' : h.pct >= 50 ? '💪' : '📚';
+      const idx = history.indexOf(h);
+      item.innerHTML = `
+        <div class="history-left">
+          <span class="history-date">${label}</span>
+          <span class="history-score">
+            <span class="h-right">✓ ${h.right}</span> &nbsp;/&nbsp;
+            <span class="h-wrong">✗ ${h.wrong}</span>
+            &nbsp;— ${h.total} từ
+          </span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="history-pct">${emoji} ${h.pct}%</span>
+          ${h.words ? `<button class="btn btn-add" style="padding:6px 12px;font-size:0.78rem;white-space:nowrap;" onclick="replayHistory(${idx})">🔁 Làm lại</button>` : ''}
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function replayHistory(idx) {
+    const h = history[idx];
+    if (!h || !h.words || h.words.length === 0) return;
+    startQuiz(h.words);
+  }
+
+  function clearHistory() {
+    if (!confirm('Xóa toàn bộ lịch sử kiểm tra?')) return;
+    history = [];
+    localStorage.removeItem('flashcard_history');
+    renderHistory();
+    showToast('Đã xóa lịch sử');
+  }
+
   // ── SHARED ──
   function hideAll() {
-    ['addPanel','studyPanel','quizPanel','resultPanel','quizResultPanel'].forEach(id => {
+    ['addPanel','studyPanel','quizPanel','resultPanel','quizResultPanel','historyPanel'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
