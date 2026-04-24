@@ -137,20 +137,56 @@
 
   .btn-add:hover { background: var(--accent-hover); transform: translateY(-1px); }
 
-  .btn-danger {
+  .word-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+
+  .btn-danger, .btn-check {
     background: transparent;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  .word-actions .btn-danger,
+  .word-actions .btn-check {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    min-width: 34px;
+    flex-shrink: 0;
+  }
+
+  .btn-danger {
     color: var(--red);
     border: 1px solid var(--red);
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    transition: all 0.2s;
   }
+
+  .btn-check {
+    color: var(--green);
+    border: 1px solid var(--green);
+    visibility: hidden;
+  }
+
+  .btn-check.visible { visibility: visible; }
 
   .word-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    height: 280px;
+    /* h1~36 + subtitle~20 + margins~64 + tabs~70 + input~44 + btn-start~52 + gaps~36 + padding~48 */
+    max-height: calc(100dvh - 470px);
+    min-height: 150px;
     overflow-y: auto;
     scrollbar-width: none;
   }
@@ -173,15 +209,15 @@
 
   .word-pair {
     display: flex;
-    gap: 10px;
-    align-items: center;
-    font-size: 0.9rem;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
   }
 
-  .word-en { color: var(--accent); font-weight: 500; min-width: 120px; }
-  .word-sep { color: var(--muted); }
-  .word-vi { min-width: 120px; }
-  .word-vi { color: var(--text); }
+  .word-en { color: var(--accent); font-weight: 500; font-size: 0.9rem; word-break: break-word; }
+  .word-vi { color: var(--text); font-size: 0.82rem; word-break: break-word; }
+  .word-sep { display: none; }
 
   .btn-start {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -484,7 +520,9 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: 480px;
+    /* title~40 + quick-cards~90 + section-label~24 + clear-btn~44 + gaps~60 + body-padding~48 */
+    max-height: calc(100dvh - 530px);
+    min-height: 120px;
     overflow-y: auto;
     scrollbar-width: none;
   }
@@ -511,6 +549,54 @@
     font-family: 'Playfair Display', serif;
     font-size: 1.5rem;
     color: var(--accent);
+  }
+
+  .quick-quiz-cards {
+    display: flex;
+    gap: 10px;
+  }
+
+  .quick-quiz-card {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .quick-quiz-card:hover { background: var(--accent-a15); }
+  .quick-quiz-card:active { transform: scale(0.97); }
+
+  .quick-quiz-label {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .quick-quiz-title {
+    font-size: 0.92rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .quick-quiz-count {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .history-section-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-left: 2px;
   }
 
   .btn-clear-history {
@@ -568,7 +654,9 @@
     opacity: 0;
     transition: all 0.3s;
     z-index: 200;
-    white-space: nowrap;
+    white-space: normal;
+    max-width: calc(100vw - 48px);
+    text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
@@ -679,7 +767,7 @@
       <input type="text" id="quizInput" placeholder="Nhập tiếng Anh..." autocomplete="off" autocorrect="off" spellcheck="false" />
       <button class="btn btn-add" onclick="checkQuiz()">✓</button>
     </div>
-    <div id="quizFeedback" style="min-height:28px; font-size:0.9rem; text-align:center; border-radius:8px; padding:4px 0; transition:all 0.2s;"></div>
+    <div id="quizFeedback" style="min-height:28px; font-size:0.9rem; text-align:center; border-radius:8px; padding:4px 0; transition:all 0.2s; word-break:break-word;"></div>
   </div>
 
   <div style="display:flex; gap:10px; width:100%;">
@@ -712,6 +800,19 @@
 <!-- HISTORY PANEL -->
 <div class="history-panel" id="historyPanel">
   <div class="history-title">📋 Lịch sử kiểm tra</div>
+  <div class="quick-quiz-cards">
+    <div class="quick-quiz-card" onclick="quizAllWords()">
+      <span class="quick-quiz-label">Ôn tập</span>
+      <span class="quick-quiz-title">Tất cả từ</span>
+      <span class="quick-quiz-count" id="quickAllCount">0 từ</span>
+    </div>
+    <div class="quick-quiz-card" onclick="quizRecentWords()">
+      <span class="quick-quiz-label">Gần đây</span>
+      <span class="quick-quiz-title">3 ngày gần nhất</span>
+      <span class="quick-quiz-count" id="quickRecentCount">0 từ</span>
+    </div>
+  </div>
+  <div class="history-section-label">Lịch sử</div>
   <div class="history-list" id="historyList">
     <p class="empty-msg">Chưa có lịch sử nào. Hãy hoàn thành một bài kiểm tra!</p>
   </div>
@@ -725,6 +826,17 @@
     <div class="modal-actions">
       <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeDeleteModal()">Hủy</button>
       <button class="btn btn-danger" style="flex:1;padding:12px;" onclick="confirmDelete()">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="clearHistoryModal">
+  <div class="modal">
+    <div class="modal-title">Xóa lịch sử?</div>
+    <div class="modal-desc">Toàn bộ lịch sử kiểm tra sẽ bị xóa vĩnh viễn.</div>
+    <div class="modal-actions">
+      <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeClearHistoryModal()">Hủy</button>
+      <button class="btn btn-danger" style="flex:1;padding:12px;" onclick="confirmClearHistory()">Xóa</button>
     </div>
   </div>
 </div>
@@ -743,6 +855,7 @@
 
   // Quiz state
   let knownWords = []; // words marked as known → go to quiz
+  let currentQuizWords = []; // source words for current quiz (used by restartQuiz)
   let quizQueue = [];
   let quizCurrent = 0;
   let quizRight = 0, quizWrong = 0;
@@ -812,24 +925,21 @@
       renderHistory();
       return;
     }
-    const panels = { add: 'addPanel', study: 'studyPanel', quiz: 'quizPanel' };
-    Object.values(panels).forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('active');
-    });
-    document.getElementById('resultPanel').classList.remove('active');
-    document.getElementById('quizResultPanel').classList.remove('active');
+    hideAll();
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     const tabIdx = { add: 0, study: 1, quiz: 2 };
     document.querySelectorAll('.tab')[tabIdx[tab]].classList.add('active');
-    if (panels[tab]) document.getElementById(panels[tab]).classList.add('active');
+    const panelId = { add: 'addPanel', study: 'studyPanel', quiz: 'quizPanel' };
+    if (panelId[tab]) document.getElementById(panelId[tab]).classList.add('active');
   }
 
   // ── ADD WORDS ──
   async function addWord() {
     const en = document.getElementById('inputEN').value.trim();
     const vi = document.getElementById('inputVI').value.trim();
-    if (!en || !vi) return;
+    if (!en && !vi) { showToast('Vui lòng nhập đầy đủ!'); return; }
+    if (!en) { showToast('Vui lòng nhập từ tiếng Anh!'); return; }
+    if (!vi) { showToast('Vui lòng nhập nghĩa tiếng Việt!'); return; }
     const word = { en, vi };
     words.push(word);
     document.getElementById('inputEN').value = '';
@@ -838,16 +948,26 @@
     saveWords();
     renderList();
     try {
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(en.toLowerCase())}`);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(en.toLowerCase())}`, { signal: ctrl.signal });
+      clearTimeout(timer);
       if (res.ok) {
         const data = await res.json();
         const entry = data[0];
         const phonetic = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
         const pos = entry.meanings?.[0]?.partOfSpeech || '';
         const example = entry.meanings?.[0]?.definitions?.find(d => d.example)?.example || '';
+        const synSet = new Set();
+        entry.meanings?.forEach(m => {
+          m.synonyms?.forEach(s => synSet.add(s));
+          m.definitions?.forEach(d => d.synonyms?.forEach(s => synSet.add(s)));
+        });
+        const synonyms = [...synSet].slice(0, 4);
         word.phonetic = phonetic;
         word.pos = pos;
         word.example = example;
+        word.synonyms = synonyms;
         saveWords();
         renderList();
       }
@@ -894,11 +1014,12 @@
       item.innerHTML = `
         <div class="word-pair">
           <span class="word-en">${w.en}</span>
-          <span class="word-sep">↔</span>
           <span class="word-vi">${w.vi}</span>
-          ${w.correct ? '<span style="color:var(--green);font-size:0.85rem;margin-left:6px;" title="Đã kiểm tra đúng">✓</span>' : ''}
         </div>
-        <button class="btn btn-danger" onclick="removeWord(${i})">✕</button>
+        <div class="word-actions">
+          <span class="btn-check ${w.correct ? 'visible' : ''}" title="Đã kiểm tra đúng">✓</span>
+          <button class="btn btn-danger" onclick="removeWord(${i})">✕</button>
+        </div>
       `;
       list.appendChild(item);
     });
@@ -1046,7 +1167,8 @@
 
   // ── QUIZ ──
   function startQuiz(wordsToTest) {
-    if (!wordsToTest || wordsToTest.length === 0) return alert('Chưa có từ nào để kiểm tra!');
+    if (!wordsToTest || wordsToTest.length === 0) { showToast('Chưa có từ nào để kiểm tra!'); return; }
+    currentQuizWords = [...wordsToTest];
     quizQueue = shuffle([...wordsToTest]);
     quizCurrent = 0; quizRight = 0; quizWrong = 0; quizMissed = []; quizDone = false;
     hideAll();
@@ -1110,15 +1232,23 @@
     const item = quizQueue[quizCurrent];
     quizWrong++;
     quizMissed.push({ vi: item.vi, en: item.en, typed: '(bỏ qua)' });
+    const ww = words.find(x => x.en === item.en);
+    if (ww) { ww.learned = false; ww.correct = false; saveWords(); renderList(); }
     quizCurrent++;
     showQuizCard();
   }
 
   function hintQuiz() {
     const item = quizQueue[quizCurrent];
-    const hint = item.en[0] + '_'.repeat(item.en.length - 1);
-    document.getElementById('quizFeedback').textContent = `💡 Gợi ý: ${hint}`;
-    document.getElementById('quizFeedback').style.color = 'var(--accent)';
+    const w = words.find(x => x.en === item.en);
+    const fb = document.getElementById('quizFeedback');
+    fb.style.color = 'var(--accent)';
+    if (w?.synonyms?.length > 0) {
+      fb.textContent = `💡 Từ đồng nghĩa: ${w.synonyms.join(', ')}`;
+    } else {
+      const hint = item.en[0] + '_'.repeat(item.en.length - 1);
+      fb.textContent = `💡 Gợi ý: ${hint}`;
+    }
   }
 
   function showQuizResult() {
@@ -1150,7 +1280,7 @@
     }
   }
 
-  function restartQuiz() { startQuiz(knownWords.length > 0 ? knownWords : words); }
+  function restartQuiz() { startQuiz(currentQuizWords.length > 0 ? currentQuizWords : words); }
 
   // ── HISTORY ──
   function saveHistory(right, wrong, total, wordKeys) {
@@ -1165,6 +1295,7 @@
   }
 
   function renderHistory() {
+    updateQuickQuizCounts();
     const list = document.getElementById('historyList');
     if (history.length === 0) {
       list.innerHTML = '<p class="empty-msg">Chưa có lịch sử nào. Hãy hoàn thành một bài kiểm tra!</p>';
@@ -1202,10 +1333,56 @@
     startQuiz(h.words);
   }
 
+  function quizAllWords() {
+    if (words.length === 0) { showToast('Chưa có từ nào!'); return; }
+    startQuiz(words.map(w => ({ en: w.en, vi: w.vi })));
+  }
+
+  function quizRecentWords() {
+    const today = new Date();
+    const dates = [0, 1, 2].map(n => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    });
+    const seen = new Set();
+    const result = [];
+    history.filter(h => dates.includes(h.date)).forEach(h => {
+      (h.words || []).forEach(w => {
+        if (!seen.has(w.en)) { seen.add(w.en); result.push({ en: w.en, vi: w.vi }); }
+      });
+    });
+    if (result.length === 0) { showToast('Không có từ nào trong 3 ngày gần đây!'); return; }
+    startQuiz(result);
+  }
+
+  function updateQuickQuizCounts() {
+    document.getElementById('quickAllCount').textContent = `${words.length} từ`;
+    const today = new Date();
+    const dates = [0, 1, 2].map(n => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    });
+    const seen = new Set();
+    history.filter(h => dates.includes(h.date)).forEach(h => {
+      (h.words || []).forEach(w => seen.add(w.en));
+    });
+    document.getElementById('quickRecentCount').textContent = `${seen.size} từ`;
+  }
+
   function clearHistory() {
-    if (!confirm('Xóa toàn bộ lịch sử kiểm tra?')) return;
+    document.getElementById('clearHistoryModal').classList.add('active');
+  }
+
+  function closeClearHistoryModal() {
+    document.getElementById('clearHistoryModal').classList.remove('active');
+  }
+
+  function confirmClearHistory() {
     history = [];
     localStorage.removeItem('flashcard_history');
+    closeClearHistoryModal();
     renderHistory();
     showToast('Đã xóa lịch sử');
   }
