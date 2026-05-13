@@ -1431,9 +1431,9 @@
   function restart()  { startStudy(); }
 
   // ── QUIZ ──
-  function startQuiz(wordsToTest) {
+  function startQuiz(wordsToTest, isSR = false) {
     if (!wordsToTest || wordsToTest.length === 0) { showToast('Chưa có từ nào để kiểm tra!'); return; }
-    srMode = false;
+    srMode = isSR;
     currentQuizWords = [...wordsToTest];
     quizQueue = shuffle([...wordsToTest]);
     quizCurrent = 0; quizRight = 0; quizWrong = 0; quizMissed = []; quizDone = false;
@@ -1652,8 +1652,7 @@
     const today = new Date().toISOString().slice(0, 10);
     const due = words.filter(w => !w.srNextReview || w.srNextReview <= today);
     if (due.length === 0) { showToast('Không có từ nào đến hạn ôn hôm nay!'); return; }
-    startQuiz(due.map(w => ({ en: w.en, vi: w.vi })));
-    srMode = true;
+    startQuiz(due.map(w => ({ en: w.en, vi: w.vi })), true);
   }
 
   function updateQuickQuizCounts() {
