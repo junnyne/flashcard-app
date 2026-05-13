@@ -892,6 +892,11 @@
       <span class="quick-quiz-title">3 ngày gần nhất</span>
       <span class="quick-quiz-count" id="quickRecentCount">0 từ</span>
     </div>
+    <div class="quick-quiz-card" onclick="quizSRWords()">
+      <span class="quick-quiz-label">Spaced Rep.</span>
+      <span class="quick-quiz-title">Đến hạn hôm nay</span>
+      <span class="quick-quiz-count" id="quickSRCount">0 từ</span>
+    </div>
   </div>
   <div class="history-section-label">Lịch sử</div>
   <div class="history-list" id="historyList">
@@ -1008,7 +1013,7 @@
   let queue = [], current = 0, totalCards = 0, roundStart = 0, roundEnd = 0, isFlipped = false;
   let knownWords = [], currentQuizWords = [];
   let quizQueue = [], quizCurrent = 0, quizRight = 0, quizWrong = 0, quizMissed = [];
-  let quizAnswered = false, quizDone = false, studyDone = false, quizAutoTimer = null;
+  let quizAnswered = false, quizDone = false, studyDone = false, quizAutoTimer = null, srMode = false;
 
   // ── DECK MANAGEMENT ──
   function renderDeckBar() {
@@ -1032,7 +1037,7 @@
     queue = []; current = 0; totalCards = 0; roundStart = 0; roundEnd = 0;
     isFlipped = false; knownWords = []; currentQuizWords = [];
     quizQueue = []; quizCurrent = 0; quizRight = 0; quizWrong = 0;
-    quizMissed = []; quizAnswered = false; quizDone = false; studyDone = false;
+    quizMissed = []; quizAnswered = false; quizDone = false; studyDone = false; srMode = false;
     clearTimeout(quizAutoTimer);
     renderDeckBar();
     backToAdd();
@@ -1098,7 +1103,7 @@
     queue = []; current = 0; totalCards = 0; roundStart = 0; roundEnd = 0;
     isFlipped = false; knownWords = []; currentQuizWords = [];
     quizQueue = []; quizCurrent = 0; quizRight = 0; quizWrong = 0;
-    quizMissed = []; quizAnswered = false; quizDone = false; studyDone = false;
+    quizMissed = []; quizAnswered = false; quizDone = false; studyDone = false; srMode = false;
     clearTimeout(quizAutoTimer);
     renderDeckBar();
     backToAdd();
@@ -1428,6 +1433,7 @@
   // ── QUIZ ──
   function startQuiz(wordsToTest) {
     if (!wordsToTest || wordsToTest.length === 0) { showToast('Chưa có từ nào để kiểm tra!'); return; }
+    srMode = false;
     currentQuizWords = [...wordsToTest];
     quizQueue = shuffle([...wordsToTest]);
     quizCurrent = 0; quizRight = 0; quizWrong = 0; quizMissed = []; quizDone = false;
@@ -1478,7 +1484,16 @@
     if (input === correct) {
       quizRight++;
       const w = words.find(x => x.en === item.en);
-      if (w) { w.learned = true; w.correct = true; saveWords(); renderList(); }
+      if (w) {
+        w.learned = true; w.correct = true;
+        if (srMode) {
+          const interval = Math.ceil((w.srInterval || 1) * 2.5);
+          w.srInterval = interval;
+          const next = new Date(); next.setDate(next.getDate() + interval);
+          w.srNextReview = next.toISOString().slice(0, 10);
+        }
+        saveWords(); renderList();
+      }
       fb.textContent = '✓ Chính xác! 🎉';
       fb.style.color = 'var(--green)';
       inp.style.borderColor = 'var(--green)';
@@ -1487,7 +1502,11 @@
       quizWrong++;
       quizMissed.push({ vi: item.vi, en: item.en, typed: input });
       const ww = words.find(x => x.en === item.en);
-      if (ww) { ww.learned = false; ww.correct = false; saveWords(); renderList(); }
+      if (ww) {
+        ww.learned = false; ww.correct = false;
+        if (srMode) { ww.srInterval = 1; const next = new Date(); next.setDate(next.getDate() + 1); ww.srNextReview = next.toISOString().slice(0, 10); }
+        saveWords(); renderList();
+      }
       fb.textContent = `✗ Sai! Đáp án đúng: "${item.en}"`;
       fb.style.color = 'var(--red)';
       inp.style.borderColor = 'var(--red)';
@@ -1507,7 +1526,11 @@
     quizWrong++;
     quizMissed.push({ vi: item.vi, en: item.en, typed: '(bỏ qua)' });
     const ww = words.find(x => x.en === item.en);
-    if (ww) { ww.learned = false; ww.correct = false; saveWords(); renderList(); }
+    if (ww) {
+      ww.learned = false; ww.correct = false;
+      if (srMode) { ww.srInterval = 1; const next = new Date(); next.setDate(next.getDate() + 1); ww.srNextReview = next.toISOString().slice(0, 10); }
+      saveWords(); renderList();
+    }
     quizCurrent++;
     showQuizCard();
   }
@@ -1625,11 +1648,22 @@
     startQuiz(result.map(w => ({ en: w.en, vi: w.vi })));
   }
 
+  function quizSRWords() {
+    const today = new Date().toISOString().slice(0, 10);
+    const due = words.filter(w => !w.srNextReview || w.srNextReview <= today);
+    if (due.length === 0) { showToast('Không có từ nào đến hạn ôn hôm nay!'); return; }
+    startQuiz(due.map(w => ({ en: w.en, vi: w.vi })));
+    srMode = true;
+  }
+
   function updateQuickQuizCounts() {
     document.getElementById('quickAllCount').textContent = `${words.length} từ`;
     const dates       = getRecentDates();
     const recentCount = words.filter(w => w.addedAt && dates.includes(w.addedAt)).length;
     document.getElementById('quickRecentCount').textContent = `${recentCount} từ`;
+    const today   = new Date().toISOString().slice(0, 10);
+    const srCount = words.filter(w => !w.srNextReview || w.srNextReview <= today).length;
+    document.getElementById('quickSRCount').textContent = `${srCount} từ`;
   }
 
   function clearHistory() {
