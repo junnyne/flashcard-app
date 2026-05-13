@@ -1095,6 +1095,11 @@
     localStorage.setItem('flashcard_active_deck', activeDeckId);
     words   = getActiveDeck().words;
     history = getActiveDeck().history;
+    queue = []; current = 0; totalCards = 0; roundStart = 0; roundEnd = 0;
+    isFlipped = false; knownWords = []; currentQuizWords = [];
+    quizQueue = []; quizCurrent = 0; quizRight = 0; quizWrong = 0;
+    quizMissed = []; quizAnswered = false; quizDone = false; studyDone = false;
+    clearTimeout(quizAutoTimer);
     renderDeckBar();
     backToAdd();
     renderList();
