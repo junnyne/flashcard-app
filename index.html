@@ -1179,7 +1179,7 @@
         document.getElementById('quizResultPanel').classList.add('active');
         document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===2));
       } else if (knownWords.length > 0) {
-        startQuiz(knownWords);
+        startQuiz(knownWords, true);
       } else {
         showToast('Hãy hoàn thành học trước rồi mới kiểm tra!');
       }
@@ -1427,7 +1427,7 @@
     }
   }
 
-  function goToQuiz() { startQuiz(knownWords); }
+  function goToQuiz() { startQuiz(knownWords, true); }
   function restart()  { startStudy(); }
 
   // ── QUIZ ──
