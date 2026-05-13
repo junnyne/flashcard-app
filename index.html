@@ -169,6 +169,20 @@
   }
   .btn-theme:hover { border-color: var(--accent); }
 
+  .toggle-switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--border); border-radius: 26px; transition: 0.3s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute;
+    height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: 0.3s;
+  }
+  input:checked + .toggle-slider { background: var(--accent); }
+  input:checked + .toggle-slider:before { transform: translateX(20px); }
+
   /* EDIT WORD */
   .btn-edit {
     background: transparent;
@@ -839,6 +853,7 @@
   <button class="btn-deck-new" onclick="openNewDeckModal()">+ Deck</button>
   <button class="btn-deck-del" onclick="openDeleteDeckModal()">🗑</button>
   <button class="btn-theme" id="themeBtn" onclick="toggleTheme()">🌙</button>
+  <button class="btn-theme" id="reminderBtn" onclick="openReminderModal()">🔔</button>
   <button class="btn-help" onclick="openHelpModal()">?</button>
 </div>
 
@@ -1083,6 +1098,29 @@
     <div class="modal-actions">
       <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeEditModal()">Hủy</button>
       <button class="btn btn-add" style="flex:1;padding:12px;" onclick="confirmEdit()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDER MODAL -->
+<div class="modal-overlay" id="reminderModal">
+  <div class="modal">
+    <div class="modal-title">🔔 Nhắc nhở học bài</div>
+    <div class="modal-desc" style="margin-bottom:12px;">App sẽ thông báo nhắc bạn ôn từ vào giờ đã đặt (cần mở app trên trình duyệt).</div>
+    <div class="modal-field" style="flex-direction:row;align-items:center;justify-content:space-between;">
+      <span style="font-size:0.9rem;color:var(--text);">Bật nhắc nhở</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="reminderEnabled" onchange="onReminderToggle()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="modal-field" id="reminderTimeRow" style="display:none;">
+      <span class="modal-label">Giờ nhắc</span>
+      <input type="time" id="reminderTime" value="20:00" style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;width:100%;" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeReminderModal()">Đóng</button>
+      <button class="btn btn-add" style="flex:1;padding:12px;" onclick="saveReminder()">Lưu</button>
     </div>
   </div>
 </div>
@@ -1953,6 +1991,65 @@
     document.getElementById('addPanel').classList.add('active');
     document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===0));
   }
+
+  // ── REMINDER ──
+  function openReminderModal() {
+    const enabled = localStorage.getItem('reminder_enabled') === '1';
+    const time    = localStorage.getItem('reminder_time') || '20:00';
+    document.getElementById('reminderEnabled').checked = enabled;
+    document.getElementById('reminderTime').value      = time;
+    document.getElementById('reminderTimeRow').style.display = enabled ? '' : 'none';
+    document.getElementById('reminderModal').classList.add('active');
+  }
+
+  function closeReminderModal() {
+    document.getElementById('reminderModal').classList.remove('active');
+  }
+
+  function onReminderToggle() {
+    const enabled = document.getElementById('reminderEnabled').checked;
+    document.getElementById('reminderTimeRow').style.display = enabled ? '' : 'none';
+  }
+
+  async function saveReminder() {
+    const enabled = document.getElementById('reminderEnabled').checked;
+    const time    = document.getElementById('reminderTime').value;
+    if (enabled) {
+      if (!('Notification' in window)) { showToast('Trình duyệt không hỗ trợ thông báo!'); return; }
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { showToast('Bạn cần cho phép thông báo để dùng tính năng này!'); return; }
+    }
+    localStorage.setItem('reminder_enabled', enabled ? '1' : '0');
+    localStorage.setItem('reminder_time', time);
+    updateReminderBtn();
+    closeReminderModal();
+    showToast(enabled ? `Đã đặt nhắc nhở lúc ${time}` : 'Đã tắt nhắc nhở');
+  }
+
+  function updateReminderBtn() {
+    const enabled = localStorage.getItem('reminder_enabled') === '1';
+    document.getElementById('reminderBtn').textContent = enabled ? '🔔' : '🔕';
+  }
+
+  function checkReminder() {
+    if (localStorage.getItem('reminder_enabled') !== '1') return;
+    if (Notification.permission !== 'granted') return;
+    const time    = localStorage.getItem('reminder_time') || '20:00';
+    const now     = new Date();
+    const [h, m]  = time.split(':').map(Number);
+    const today   = now.toISOString().slice(0, 10);
+    const lastNotified = localStorage.getItem('reminder_last');
+    if (now.getHours() === h && now.getMinutes() === m && lastNotified !== today) {
+      localStorage.setItem('reminder_last', today);
+      new Notification('FlashCard — Nhắc học bài! 📚', {
+        body: 'Hôm nay bạn chưa ôn từ vựng. Vào app ôn ngay nhé!',
+        icon: './icon.svg'
+      });
+    }
+  }
+
+  updateReminderBtn();
+  setInterval(checkReminder, 60000);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js');
