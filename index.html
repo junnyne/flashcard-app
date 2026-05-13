@@ -54,9 +54,64 @@
   .subtitle {
     color: var(--muted);
     font-size: 0.85rem;
-    margin-bottom: 28px;
+    margin-bottom: 16px;
     text-align: center;
   }
+
+  /* DECK BAR */
+  .deck-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 16px;
+  }
+
+  .deck-select {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    cursor: pointer;
+    min-width: 0;
+  }
+  .deck-select:focus { border-color: var(--accent); }
+  .deck-select option { background: var(--card-bg); }
+
+  .btn-deck-new {
+    background: var(--accent);
+    color: #111;
+    padding: 9px 14px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-deck-new:hover { background: var(--accent-hover); }
+
+  .btn-deck-del {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 9px 11px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-deck-del:hover { border-color: var(--red); color: var(--red); }
 
   /* TABS */
   .tabs {
@@ -184,8 +239,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    /* h1~36 + subtitle~20 + margins~64 + tabs~70 + input~44 + btn-start~52 + gaps~36 + padding~48 */
-    max-height: calc(100dvh - 470px);
+    max-height: calc(100dvh - 510px);
     min-height: 150px;
     overflow-y: auto;
     scrollbar-width: none;
@@ -217,7 +271,6 @@
 
   .word-en { color: var(--accent); font-weight: 500; font-size: 0.9rem; word-break: break-word; }
   .word-vi { color: var(--text); font-size: 0.82rem; word-break: break-word; }
-  .word-sep { display: none; }
 
   .btn-start {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -496,7 +549,6 @@
     padding: 16px;
   }
 
-  /* scrollbar hidden but functional */
   .word-list::-webkit-scrollbar { display: none; }
 
   /* HISTORY PANEL */
@@ -520,7 +572,6 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    /* title~40 + quick-cards~90 + section-label~24 + clear-btn~44 + gaps~60 + body-padding~48 */
     max-height: calc(100dvh - 530px);
     min-height: 120px;
     overflow-y: auto;
@@ -628,16 +679,33 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 28px 24px;
-    width: 300px;
+    width: 320px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     text-align: center;
   }
   .modal-title { font-size: 1rem; font-weight: 600; }
   .modal-desc { font-size: 0.85rem; color: var(--muted); }
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions .btn { flex: 1; }
+  .modal-label { font-size: 0.8rem; color: var(--muted); text-align: left; }
+  .modal-field { display: flex; flex-direction: column; gap: 5px; text-align: left; }
+  .modal select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+  }
+  .modal select:focus { border-color: var(--accent); }
+  .modal select option { background: var(--card-bg); }
+  .modal input[type="text"] { width: 100%; }
 
   /* TOAST */
   .toast {
@@ -666,6 +734,13 @@
 <h1>✦ FlashCard</h1>
 <p class="subtitle">Học từ vựng theo cách của bạn</p>
 
+<!-- DECK BAR -->
+<div class="deck-bar">
+  <select class="deck-select" id="deckSelect" onchange="switchDeck(this.value)"></select>
+  <button class="btn-deck-new" onclick="openNewDeckModal()">+ Deck</button>
+  <button class="btn-deck-del" onclick="openDeleteDeckModal()">🗑</button>
+</div>
+
 <div class="tabs">
   <button class="tab active" onclick="switchTab('add')">➕ Thêm từ</button>
   <button class="tab" onclick="switchTab('study')" id="studyTab">📖 Học</button>
@@ -676,10 +751,10 @@
 <!-- ADD PANEL -->
 <div class="panel active" id="addPanel">
   <div class="input-row">
-    <input type="text" id="inputEN" placeholder="Từ tiếng Anh (e.g. ambitious)" />
+    <input type="text" id="inputEN" placeholder="Mặt trước" />
   </div>
   <div class="input-row">
-    <input type="text" id="inputVI" placeholder="Nghĩa tiếng Việt (e.g. tham vọng)" />
+    <input type="text" id="inputVI" placeholder="Mặt sau" />
     <button class="btn btn-add" onclick="addWord()">+ Thêm</button>
   </div>
 
@@ -699,7 +774,7 @@
 <!-- STUDY PANEL -->
 <div class="study-panel" id="studyPanel">
   <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-    <span class="direction-badge" id="dirBadge">🇺🇸 EN → VI</span>
+    <span class="direction-badge" id="dirBadge">EN → VI</span>
     <span class="progress-label" id="progressLabel">0 / 0</span>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -707,7 +782,7 @@
   <div class="card-scene" onclick="flipCard()">
     <div class="card-3d" id="card3d">
       <div class="card-face card-front">
-        <span class="card-label" id="frontLabel">Tiếng Anh</span>
+        <span class="card-label" id="frontLabel">Mặt trước</span>
         <span class="card-pos" id="frontPos" style="display:none"></span>
         <span class="card-word" id="frontWord">—</span>
         <span class="card-phonetic" id="frontPhonetic"></span>
@@ -716,7 +791,7 @@
         <span class="card-hint">Nhấn thẻ để lật 👆</span>
       </div>
       <div class="card-face card-back">
-        <span class="card-label" id="backLabel">Tiếng Việt</span>
+        <span class="card-label" id="backLabel">Mặt sau</span>
         <span class="card-word" id="backWord">—</span>
         <button class="speak-btn" id="speakBack" onclick="event.stopPropagation(); speakBack()">🔊 Nghe phát âm</button>
         <span class="card-hint">Nhấn thẻ để lật 👆</span>
@@ -757,20 +832,20 @@
 <!-- QUIZ PANEL -->
 <div class="study-panel" id="quizPanel">
   <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-    <span class="direction-badge">🇻🇳 VI → gõ EN</span>
+    <span class="direction-badge" id="quizDirBadge">VI → gõ EN</span>
     <span class="progress-label" id="quizProgressLabel">0 / 0</span>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="quizProgressFill" style="width:0%"></div></div>
 
   <div style="width:100%; background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:32px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
-    <span style="font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; color:var(--muted);">🇻🇳 Tiếng Việt</span>
+    <span id="quizBackLabel" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; color:var(--muted);">Mặt sau</span>
     <span id="quizVI" style="font-family:'Playfair Display',serif; font-size:2rem; color:var(--accent); text-align:center;">—</span>
   </div>
 
   <div style="width:100%; display:flex; flex-direction:column; gap:8px;">
-    <label style="font-size:0.8rem; color:var(--muted);">Gõ từ tiếng Anh:</label>
+    <label id="quizInputLabel" style="font-size:0.8rem; color:var(--muted);">Gõ mặt trước:</label>
     <div style="display:flex; gap:8px;">
-      <input type="text" id="quizInput" placeholder="Nhập tiếng Anh..." autocomplete="off" autocorrect="off" spellcheck="false" />
+      <input type="text" id="quizInput" placeholder="Nhập câu trả lời..." autocomplete="off" autocorrect="off" spellcheck="false" />
       <button class="btn btn-add" id="quizCheckBtn" onclick="checkQuiz()">✓</button>
     </div>
     <div id="quizFeedback" style="min-height:28px; font-size:0.9rem; text-align:center; border-radius:8px; padding:4px 0; transition:all 0.2s; word-break:break-word;"></div>
@@ -825,6 +900,7 @@
   <button class="btn-clear-history" onclick="clearHistory()">🗑 Xóa toàn bộ lịch sử</button>
 </div>
 
+<!-- DELETE WORD MODAL -->
 <div class="modal-overlay" id="deleteModal">
   <div class="modal">
     <div class="modal-title">Xóa từ này?</div>
@@ -836,6 +912,7 @@
   </div>
 </div>
 
+<!-- CLEAR HISTORY MODAL -->
 <div class="modal-overlay" id="clearHistoryModal">
   <div class="modal">
     <div class="modal-title">Xóa lịch sử?</div>
@@ -847,42 +924,220 @@
   </div>
 </div>
 
+<!-- NEW DECK MODAL -->
+<div class="modal-overlay" id="newDeckModal">
+  <div class="modal">
+    <div class="modal-title">Tạo deck mới</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" style="flex:1;padding:8px 4px;font-size:0.78rem;background:var(--card-bg);border:1px solid var(--border);color:var(--text);" onclick="presetDeck('ja-JP','vi-VN','Japanese → Việt')">🇯🇵 Nhật</button>
+      <button class="btn" style="flex:1;padding:8px 4px;font-size:0.78rem;background:var(--card-bg);border:1px solid var(--border);color:var(--text);" onclick="presetDeck('ko-KR','vi-VN','Korean → Việt')">🇰🇷 Hàn</button>
+      <button class="btn" style="flex:1;padding:8px 4px;font-size:0.78rem;background:var(--card-bg);border:1px solid var(--border);color:var(--text);" onclick="presetDeck('zh-CN','vi-VN','Chinese → Việt')">🇨🇳 Trung</button>
+    </div>
+    <div class="modal-field">
+      <input type="text" id="newDeckName" placeholder="Tên deck (e.g. Japanese → Việt)" />
+    </div>
+    <div class="modal-field">
+      <span class="modal-label">Mặt trước (câu hỏi)</span>
+      <select id="newDeckFront"></select>
+    </div>
+    <div class="modal-field">
+      <span class="modal-label">Mặt sau (đáp án)</span>
+      <select id="newDeckBack"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeNewDeckModal()">Hủy</button>
+      <button class="btn btn-add" style="flex:1;padding:12px;" onclick="confirmNewDeck()">Tạo deck</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE DECK MODAL -->
+<div class="modal-overlay" id="deleteDeckModal">
+  <div class="modal">
+    <div class="modal-title">Xóa deck này?</div>
+    <div class="modal-desc" id="deleteDeckDesc"></div>
+    <div class="modal-actions">
+      <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeDeleteDeckModal()">Hủy</button>
+      <button class="btn btn-danger" style="flex:1;padding:12px;" onclick="confirmDeleteDeck()">Xóa</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-  let words = JSON.parse(localStorage.getItem('flashcard_words') || '[]');
-  let history = JSON.parse(localStorage.getItem('flashcard_history') || '[]');
-  let queue = [];
-  let current = 0;
-  let totalCards = 0;
-  let roundStart = 0, roundEnd = 0;
-  let isFlipped = false;
+  // ── LANGUAGES ──
+  const LANGS = [
+    { code: 'en-US', label: '🇺🇸 English',    short: 'EN' },
+    { code: 'vi-VN', label: '🇻🇳 Tiếng Việt', short: 'VI' },
+    { code: 'ja-JP', label: '🇯🇵 日本語',      short: 'JA' },
+    { code: 'ko-KR', label: '🇰🇷 한국어',      short: 'KO' },
+    { code: 'zh-CN', label: '🇨🇳 中文',        short: 'ZH' },
+    { code: 'fr-FR', label: '🇫🇷 Français',    short: 'FR' },
+    { code: 'de-DE', label: '🇩🇪 Deutsch',     short: 'DE' },
+    { code: 'es-ES', label: '🇪🇸 Español',     short: 'ES' },
+  ];
+  function getLang(code) {
+    return LANGS.find(l => l.code === code) || { code, label: code, short: code.slice(0, 2).toUpperCase() };
+  }
 
-  // Quiz state
-  let knownWords = []; // words marked as known → go to quiz
-  let currentQuizWords = []; // source words for current quiz (used by restartQuiz)
-  let quizQueue = [];
-  let quizCurrent = 0;
-  let quizRight = 0, quizWrong = 0;
-  let quizMissed = [];
-  let quizAnswered = false;
-  let quizDone = false;
-  let studyDone = false;
-  let quizAutoTimer = null;
+  // ── DECKS ──
+  let decks = JSON.parse(localStorage.getItem('flashcard_decks') || 'null');
+  let activeDeckId = localStorage.getItem('flashcard_active_deck');
+
+  // Migration: v1 flat storage → deck structure
+  if (!decks) {
+    const oldWords   = JSON.parse(localStorage.getItem('flashcard_words')   || '[]');
+    const oldHistory = JSON.parse(localStorage.getItem('flashcard_history') || '[]');
+    decks = [{ id: '1', name: 'English → Tiếng Việt', frontLang: 'en-US', backLang: 'vi-VN', words: oldWords, history: oldHistory }];
+    saveDecks();
+  }
+  if (!activeDeckId || !decks.find(d => d.id === activeDeckId)) {
+    activeDeckId = decks[0].id;
+    localStorage.setItem('flashcard_active_deck', activeDeckId);
+  }
+
+  function getActiveDeck() { return decks.find(d => d.id === activeDeckId); }
+  let words   = getActiveDeck().words;
+  let history = getActiveDeck().history;
+
+  function saveDecks() { localStorage.setItem('flashcard_decks', JSON.stringify(decks)); }
+  function saveWords()  { saveDecks(); }
+
+  // ── GAME STATE ──
+  let queue = [], current = 0, totalCards = 0, roundStart = 0, roundEnd = 0, isFlipped = false;
+  let knownWords = [], currentQuizWords = [];
+  let quizQueue = [], quizCurrent = 0, quizRight = 0, quizWrong = 0, quizMissed = [];
+  let quizAnswered = false, quizDone = false, studyDone = false, quizAutoTimer = null;
+
+  // ── DECK MANAGEMENT ──
+  function renderDeckBar() {
+    const deck = getActiveDeck();
+    const fl = getLang(deck.frontLang);
+    const bl = getLang(deck.backLang);
+    const sel = document.getElementById('deckSelect');
+    sel.innerHTML = decks.map(d =>
+      `<option value="${d.id}"${d.id === activeDeckId ? ' selected' : ''}>${d.name}</option>`
+    ).join('');
+    document.getElementById('inputEN').placeholder = `${fl.label} (mặt trước)`;
+    document.getElementById('inputVI').placeholder = `${bl.label} (mặt sau)`;
+  }
+
+  function switchDeck(id) {
+    if (id === activeDeckId) return;
+    activeDeckId = id;
+    localStorage.setItem('flashcard_active_deck', activeDeckId);
+    words   = getActiveDeck().words;
+    history = getActiveDeck().history;
+    queue = []; current = 0; totalCards = 0; roundStart = 0; roundEnd = 0;
+    isFlipped = false; knownWords = []; currentQuizWords = [];
+    quizQueue = []; quizCurrent = 0; quizRight = 0; quizWrong = 0;
+    quizMissed = []; quizAnswered = false; quizDone = false; studyDone = false;
+    clearTimeout(quizAutoTimer);
+    renderDeckBar();
+    backToAdd();
+    renderList();
+  }
+
+  function presetDeck(front, back, name) {
+    document.getElementById('newDeckFront').value = front;
+    document.getElementById('newDeckBack').value  = back;
+    document.getElementById('newDeckName').value  = name;
+  }
+
+  function openNewDeckModal() {
+    const opts = LANGS.map(l => `<option value="${l.code}">${l.label}</option>`).join('');
+    document.getElementById('newDeckFront').innerHTML = opts;
+    document.getElementById('newDeckBack').innerHTML  = opts;
+    document.getElementById('newDeckFront').value = 'en-US';
+    document.getElementById('newDeckBack').value  = 'vi-VN';
+    document.getElementById('newDeckName').value  = '';
+    document.getElementById('newDeckModal').classList.add('active');
+    setTimeout(() => document.getElementById('newDeckName').focus(), 100);
+  }
+
+  function closeNewDeckModal() {
+    document.getElementById('newDeckModal').classList.remove('active');
+  }
+
+  function confirmNewDeck() {
+    const name      = document.getElementById('newDeckName').value.trim();
+    const frontLang = document.getElementById('newDeckFront').value;
+    const backLang  = document.getElementById('newDeckBack').value;
+    if (!name) { showToast('Vui lòng nhập tên deck!'); return; }
+    if (frontLang === backLang) { showToast('Hai ngôn ngữ không được giống nhau!'); return; }
+    const newDeck = { id: Date.now().toString(), name, frontLang, backLang, words: [], history: [] };
+    decks.push(newDeck);
+    saveDecks();
+    closeNewDeckModal();
+    switchDeck(newDeck.id);
+    showToast(`Đã tạo deck "${name}"`);
+  }
+
+  function openDeleteDeckModal() {
+    if (decks.length <= 1) { showToast('Phải có ít nhất một deck!'); return; }
+    const deck = getActiveDeck();
+    document.getElementById('deleteDeckDesc').textContent =
+      `"${deck.name}" — ${deck.words.length} từ, ${deck.history.length} lượt kiểm tra`;
+    document.getElementById('deleteDeckModal').classList.add('active');
+  }
+
+  function closeDeleteDeckModal() {
+    document.getElementById('deleteDeckModal').classList.remove('active');
+  }
+
+  function confirmDeleteDeck() {
+    const idx = decks.findIndex(d => d.id === activeDeckId);
+    decks.splice(idx, 1);
+    saveDecks();
+    closeDeleteDeckModal();
+    activeDeckId = decks[Math.max(0, idx - 1)].id;
+    localStorage.setItem('flashcard_active_deck', activeDeckId);
+    words   = getActiveDeck().words;
+    history = getActiveDeck().history;
+    renderDeckBar();
+    backToAdd();
+    renderList();
+    showToast('Đã xóa deck');
+  }
 
   // ── SPEECH ──
+  let _voices = [];
+  const _noVoiceWarned = new Set();
+
+  function _loadVoices() { _voices = window.speechSynthesis?.getVoices() || []; }
+  _loadVoices();
+  if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = _loadVoices;
+
   function speak(text, lang) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
+
+    const voices = _voices.length ? _voices : window.speechSynthesis.getVoices();
+    const voice  = voices.find(v => v.lang === lang)
+                || voices.find(v => v.lang.startsWith(lang.slice(0, 2)));
+
+    if (!voice && lang !== 'en-US' && lang !== 'en-GB' && lang !== 'en-AU') {
+      // Chưa cài voice cho ngôn ngữ này - báo 1 lần rồi thôi
+      if (!_noVoiceWarned.has(lang)) {
+        _noVoiceWarned.add(lang);
+        const name = getLang(lang).label;
+        showToast(`Chưa có giọng đọc ${name}. Windows: Cài đặt → Ngôn ngữ → Thêm ngôn ngữ → bật Chuyển văn bản thành giọng nói.`);
+      }
+      return;
+    }
+
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang; u.rate = 0.9; u.pitch = 1;
+    u.lang  = lang;
+    u.rate  = 0.85;
+    u.pitch = 1;
+    if (voice) u.voice = voice;
     window.speechSynthesis.speak(u);
   }
 
   function speakFront() {
     const item = queue[current]; if (!item) return;
-    const isEN = item.dir === 'en-vi';
-    speak(isEN ? item.en : item.vi, isEN ? 'en-US' : 'vi-VN');
+    speak(item.en, getActiveDeck().frontLang);
     const btn = document.getElementById('speakFront');
     btn.classList.add('speaking'); btn.textContent = '🔊 Đang phát...';
     setTimeout(() => { btn.classList.remove('speaking'); btn.textContent = '🔊 Nghe phát âm'; }, 2000);
@@ -890,8 +1145,7 @@
 
   function speakBack() {
     const item = queue[current]; if (!item) return;
-    const isEN = item.dir === 'en-vi';
-    speak(isEN ? item.vi : item.en, isEN ? 'vi-VN' : 'en-US');
+    speak(item.vi, getActiveDeck().backLang);
     const btn = document.getElementById('speakBack');
     btn.classList.add('speaking'); btn.textContent = '🔊 Đang phát...';
     setTimeout(() => { btn.classList.remove('speaking'); btn.textContent = '🔊 Nghe phát âm'; }, 2000);
@@ -941,8 +1195,8 @@
     const en = document.getElementById('inputEN').value.trim();
     const vi = document.getElementById('inputVI').value.trim();
     if (!en && !vi) { showToast('Vui lòng nhập đầy đủ!'); return; }
-    if (!en) { showToast('Vui lòng nhập từ tiếng Anh!'); return; }
-    if (!vi) { showToast('Vui lòng nhập nghĩa tiếng Việt!'); return; }
+    if (!en) { showToast('Vui lòng nhập mặt trước!'); return; }
+    if (!vi) { showToast('Vui lòng nhập mặt sau!'); return; }
     const word = { en, vi, addedAt: new Date().toISOString().slice(0, 10) };
     words.push(word);
     document.getElementById('inputEN').value = '';
@@ -950,36 +1204,41 @@
     document.getElementById('inputEN').focus();
     saveWords();
     renderList();
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 5000);
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(en.toLowerCase())}`, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (res.ok) {
-        const data = await res.json();
-        const entry = data[0];
-        const phonetic = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
-        const pos = entry.meanings?.[0]?.partOfSpeech || '';
-        const example = entry.meanings?.[0]?.definitions?.find(d => d.example)?.example || '';
-        const synSet = new Set();
-        entry.meanings?.forEach(m => {
-          m.synonyms?.forEach(s => synSet.add(s));
-          m.definitions?.forEach(d => d.synonyms?.forEach(s => synSet.add(s)));
-        });
-        const synonyms = [...synSet].slice(0, 4);
-        word.phonetic = phonetic;
-        word.pos = pos;
-        word.example = example;
-        word.synonyms = synonyms;
-        saveWords();
-        renderList();
-      }
-    } catch (_) {}
+    // Dictionary API chỉ dùng cho deck tiếng Anh mặt trước
+    if (getActiveDeck().frontLang === 'en-US') {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(en.toLowerCase())}`, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = await res.json();
+          const entry = data[0];
+          const phonetic = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
+          const pos = entry.meanings?.[0]?.partOfSpeech || '';
+          const example = entry.meanings?.[0]?.definitions?.find(d => d.example)?.example || '';
+          const synSet = new Set();
+          entry.meanings?.forEach(m => {
+            m.synonyms?.forEach(s => synSet.add(s));
+            m.definitions?.forEach(d => d.synonyms?.forEach(s => synSet.add(s)));
+          });
+          word.phonetic = phonetic;
+          word.pos = pos;
+          word.example = example;
+          word.synonyms = [...synSet].slice(0, 4);
+          saveWords();
+          renderList();
+        }
+      } catch (_) {}
+    }
   }
 
+  renderDeckBar();
   renderList();
 
+  // Background fetch phonetic/pos/example cho từ cũ (chỉ en-US)
   (async () => {
+    if (getActiveDeck().frontLang !== 'en-US') return;
     let changed = false;
     for (const w of words) {
       if (w.dictFetched && w.phonetic && w.pos && w.example) continue;
@@ -990,8 +1249,8 @@
           const data = await res.json();
           const entry = data[0];
           w.phonetic = entry.phonetic || entry.phonetics?.find(p => p.text)?.text || '';
-          w.pos = entry.meanings?.[0]?.partOfSpeech || '';
-          w.example = entry.meanings?.[0]?.definitions?.find(d => d.example)?.example || '';
+          w.pos      = entry.meanings?.[0]?.partOfSpeech || '';
+          w.example  = entry.meanings?.[0]?.definitions?.find(d => d.example)?.example || '';
         }
         w.dictFetched = true;
         changed = true;
@@ -1003,6 +1262,7 @@
   document.getElementById('inputVI').addEventListener('keydown', e => { if(e.key==='Enter') addWord(); });
   document.getElementById('inputEN').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('inputVI').focus(); });
   document.getElementById('quizInput').addEventListener('keydown', e => { if(e.key==='Enter') checkQuiz(); });
+  document.getElementById('newDeckName').addEventListener('keydown', e => { if(e.key==='Enter') confirmNewDeck(); });
 
   function renderList() {
     const list = document.getElementById('wordList');
@@ -1028,8 +1288,6 @@
     });
   }
 
-  function saveWords() { localStorage.setItem('flashcard_words', JSON.stringify(words)); }
-
   let pendingDeleteIdx = -1;
 
   function removeWord(i) {
@@ -1046,7 +1304,6 @@
 
   function confirmDelete() {
     if (pendingDeleteIdx < 0) return;
-    const w = words[pendingDeleteIdx];
     words.splice(pendingDeleteIdx, 1);
     saveWords();
     renderList();
@@ -1070,10 +1327,8 @@
       backToAdd();
       return;
     }
-    queue = [];
-    unlearned.forEach(w => queue.push({ ...w, dir: 'en-vi' }));
-    queue = shuffle(queue);
-    current = 0; known = 0; unknown = 0; knownWords = []; totalCards = queue.length; studyDone = false; quizDone = false;
+    queue = shuffle(unlearned.map(w => ({ ...w })));
+    current = 0; knownWords = []; totalCards = queue.length; studyDone = false; quizDone = false;
     roundStart = 0; roundEnd = totalCards;
     hideAll();
     document.getElementById('studyPanel').classList.add('active');
@@ -1099,21 +1354,23 @@
       b.classList.remove('speaking'); b.textContent = '🔊 Nghe phát âm';
     });
     const item = queue[current];
-    const isEN = item.dir === 'en-vi';
-    document.getElementById('frontLabel').textContent = isEN ? '🇺🇸 Tiếng Anh' : '🇻🇳 Tiếng Việt';
-    document.getElementById('backLabel').textContent = isEN ? '🇻🇳 Tiếng Việt' : '🇺🇸 Tiếng Anh';
-    document.getElementById('frontWord').textContent = isEN ? item.en : item.vi;
-    document.getElementById('backWord').textContent = isEN ? item.vi : item.en;
-    document.getElementById('dirBadge').textContent = isEN ? '🇺🇸 EN → VI' : '🇻🇳 VI → EN';
-    const posEl = document.getElementById('frontPos');
+    const deck = getActiveDeck();
+    const fl = getLang(deck.frontLang);
+    const bl = getLang(deck.backLang);
+    document.getElementById('frontLabel').textContent = fl.label;
+    document.getElementById('backLabel').textContent  = bl.label;
+    document.getElementById('frontWord').textContent  = item.en;
+    document.getElementById('backWord').textContent   = item.vi;
+    document.getElementById('dirBadge').textContent   = `${fl.short} → ${bl.short}`;
+    const posEl      = document.getElementById('frontPos');
     const phoneticEl = document.getElementById('frontPhonetic');
-    if (isEN && item.pos) { posEl.textContent = item.pos; posEl.style.display = ''; } else { posEl.style.display = 'none'; }
-    phoneticEl.textContent = isEN && item.phonetic ? item.phonetic : '';
-    document.getElementById('frontExample').textContent = isEN && item.example ? `"${item.example}"` : '';
-    document.getElementById('speakFront').style.visibility = isEN ? '' : 'hidden';
-    document.getElementById('speakBack').style.visibility = isEN ? 'hidden' : '';
+    if (item.pos) { posEl.textContent = item.pos; posEl.style.display = ''; } else { posEl.style.display = 'none'; }
+    phoneticEl.textContent = item.phonetic || '';
+    document.getElementById('frontExample').textContent = item.example ? `"${item.example}"` : '';
+    document.getElementById('speakFront').style.visibility = '';
+    document.getElementById('speakBack').style.visibility  = '';
     updateProgress();
-    if (isEN) setTimeout(() => speakFront(), 400);
+    setTimeout(() => speakFront(), 400);
   }
 
   function flipCard() {
@@ -1133,37 +1390,35 @@
   }
 
   function updateProgress() {
-    const pos = current - roundStart + 1;
+    const pos   = current - roundStart + 1;
     const total = roundEnd - roundStart;
-    const pct = (pos / total) * 100;
-    document.getElementById('progressFill').style.width = pct + '%';
-    const label = roundStart === 0 ? `${pos} / ${total}` : `🔁 ${pos} / ${total}`;
-    document.getElementById('progressLabel').textContent = label;
+    document.getElementById('progressFill').style.width = (pos / total * 100) + '%';
+    document.getElementById('progressLabel').textContent = roundStart === 0 ? `${pos} / ${total}` : `🔁 ${pos} / ${total}`;
   }
 
   function showResult() {
     studyDone = true;
     hideAll();
     document.getElementById('resultPanel').classList.add('active');
-    const uniqueKnown = knownWords.length;
+    const uniqueKnown   = knownWords.length;
     const uniqueUnknown = totalCards - uniqueKnown;
     document.getElementById('statKnow').textContent = uniqueKnown;
     document.getElementById('statDont').textContent = uniqueUnknown;
     const pct = totalCards ? Math.round(uniqueKnown / totalCards * 100) : 0;
     document.getElementById('resultEmoji').textContent = pct >= 80 ? '🏆' : pct >= 50 ? '💪' : '📚';
     const btnQ = document.getElementById('btnGoQuiz');
-    const qp = document.getElementById('quizPrompt');
+    const qp   = document.getElementById('quizPrompt');
     if (knownWords.length > 0) {
-      qp.textContent = `Bạn đã nhớ ${knownWords.length} từ → Kiểm tra ngay!`;
+      qp.textContent     = `Bạn đã nhớ ${knownWords.length} từ → Kiểm tra ngay!`;
       btnQ.style.display = '';
     } else {
-      qp.textContent = 'Chưa có từ nào được đánh dấu "Đã nhớ".';
+      qp.textContent     = 'Chưa có từ nào được đánh dấu "Đã nhớ".';
       btnQ.style.display = 'none';
     }
   }
 
   function goToQuiz() { startQuiz(knownWords); }
-  function restart() { startStudy(); }
+  function restart()  { startStudy(); }
 
   // ── QUIZ ──
   function startQuiz(wordsToTest) {
@@ -1171,6 +1426,14 @@
     currentQuizWords = [...wordsToTest];
     quizQueue = shuffle([...wordsToTest]);
     quizCurrent = 0; quizRight = 0; quizWrong = 0; quizMissed = []; quizDone = false;
+    // Update dynamic labels for current deck
+    const deck = getActiveDeck();
+    const fl = getLang(deck.frontLang);
+    const bl = getLang(deck.backLang);
+    document.getElementById('quizDirBadge').textContent   = `${bl.short} → gõ ${fl.short}`;
+    document.getElementById('quizBackLabel').textContent  = bl.label;
+    document.getElementById('quizInputLabel').textContent = `Gõ ${fl.label}:`;
+    document.getElementById('quizInput').placeholder      = `Nhập ${fl.short}...`;
     hideAll();
     document.getElementById('quizPanel').classList.add('active');
     document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===2));
@@ -1186,16 +1449,14 @@
     document.getElementById('quizInput').value = '';
     document.getElementById('quizFeedback').textContent = '';
     document.getElementById('quizFeedback').style.color = '';
-    document.getElementById('quizFeedback').style.background = '';
     document.getElementById('quizInput').style.borderColor = '';
     document.getElementById('quizInput').disabled = false;
     document.getElementById('quizCheckBtn').textContent = '✓';
     document.getElementById('quizInput').focus();
     const total = quizQueue.length;
-    const pct = total ? (quizCurrent / total * 100) : 0;
-    document.getElementById('quizProgressFill').style.width = pct + '%';
+    document.getElementById('quizProgressFill').style.width = (quizCurrent / total * 100) + '%';
     document.getElementById('quizProgressLabel').textContent = `${quizCurrent} / ${total}`;
-    setTimeout(() => speak(item.vi, 'vi-VN'), 400);
+    setTimeout(() => speak(item.vi, getActiveDeck().backLang), 400);
   }
 
   function checkQuiz() {
@@ -1203,10 +1464,10 @@
       clearTimeout(quizAutoTimer);
       quizCurrent++; showQuizCard(); return;
     }
-    const item = quizQueue[quizCurrent];
+    const item  = quizQueue[quizCurrent];
     const input = document.getElementById('quizInput').value.trim().toLowerCase();
     const correct = item.en.toLowerCase();
-    const fb = document.getElementById('quizFeedback');
+    const fb  = document.getElementById('quizFeedback');
     const inp = document.getElementById('quizInput');
 
     if (input === correct) {
@@ -1216,7 +1477,7 @@
       fb.textContent = '✓ Chính xác! 🎉';
       fb.style.color = 'var(--green)';
       inp.style.borderColor = 'var(--green)';
-      speak(item.en, 'en-US');
+      speak(item.en, getActiveDeck().frontLang);
     } else {
       quizWrong++;
       quizMissed.push({ vi: item.vi, en: item.en, typed: input });
@@ -1225,12 +1486,11 @@
       fb.textContent = `✗ Sai! Đáp án đúng: "${item.en}"`;
       fb.style.color = 'var(--red)';
       inp.style.borderColor = 'var(--red)';
-      speak(item.en, 'en-US');
+      speak(item.en, getActiveDeck().frontLang);
     }
     quizAnswered = true;
     inp.disabled = true;
     document.getElementById('quizCheckBtn').textContent = '→';
-    // delay tỉ lệ với độ dài chữ: tối thiểu 1800ms, +55ms mỗi ký tự của VI + feedback
     const totalChars = item.vi.length + fb.textContent.length;
     const delay = Math.min(Math.max(1800, totalChars * 55), 5000);
     quizAutoTimer = setTimeout(() => { quizCurrent++; showQuizCard(); }, delay);
@@ -1250,19 +1510,18 @@
   function hintQuiz() {
     if (quizAnswered) return;
     const item = quizQueue[quizCurrent];
-    const w = words.find(x => x.en === item.en);
+    const w  = words.find(x => x.en === item.en);
     const fb = document.getElementById('quizFeedback');
     fb.style.color = 'var(--accent)';
     if (w?.synonyms?.length > 0) {
       fb.textContent = `💡 Từ đồng nghĩa: ${w.synonyms.join(', ')}`;
     } else {
-      const hint = item.en[0] + '_'.repeat(item.en.length - 1);
-      fb.textContent = `💡 Gợi ý: ${hint}`;
+      fb.textContent = `💡 Gợi ý: ${item.en[0]}${'_'.repeat(item.en.length - 1)}`;
     }
   }
 
   function showQuizResult() {
-    quizDone = true;
+    quizDone  = true;
     studyDone = false;
     saveHistory(quizRight, quizWrong, quizQueue.length, quizQueue.map(w => w.en));
     words.forEach(w => { w.learned = false; });
@@ -1273,7 +1532,6 @@
     document.getElementById('quizStatWrong').textContent = quizWrong;
     const pct = quizQueue.length ? Math.round(quizRight / quizQueue.length * 100) : 0;
     document.getElementById('quizResultEmoji').textContent = pct >= 80 ? '🏆' : pct >= 50 ? '💪' : '📚';
-
     const missedList = document.getElementById('quizMissedList');
     missedList.innerHTML = '';
     if (quizMissed.length > 0) {
@@ -1290,18 +1548,17 @@
     }
   }
 
-  function restartQuiz() { startQuiz(currentQuizWords.length > 0 ? currentQuizWords : words); }
+  function restartQuiz() { startQuiz(currentQuizWords.length > 0 ? currentQuizWords : words.map(w => ({ en: w.en, vi: w.vi }))); }
 
   // ── HISTORY ──
   function saveHistory(right, wrong, total, wordKeys) {
     const today = new Date().toISOString().slice(0, 10);
-    const key = [...wordKeys].sort().join(',');
-    const exists = history.find(h => h.date === today && h.key === key);
-    if (exists) return; // only save first attempt of this quiz on this day
-    const pct = total ? Math.round(right / total * 100) : 0;
+    const key   = [...wordKeys].sort().join(',');
+    if (history.find(h => h.date === today && h.key === key)) return;
+    const pct            = total ? Math.round(right / total * 100) : 0;
     const words_snapshot = quizQueue.map(w => ({ en: w.en, vi: w.vi }));
     history.unshift({ date: today, right, wrong, total, pct, key, words: words_snapshot });
-    localStorage.setItem('flashcard_history', JSON.stringify(history));
+    saveDecks();
   }
 
   function renderHistory() {
@@ -1312,13 +1569,12 @@
       return;
     }
     list.innerHTML = '';
-    history.forEach(h => {
-      const item = document.createElement('div');
+    history.forEach((h, idx) => {
+      const item  = document.createElement('div');
       item.className = 'history-item';
-      const d = new Date(h.date);
+      const d     = new Date(h.date);
       const label = d.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
       const emoji = h.pct >= 80 ? '🏆' : h.pct >= 50 ? '💪' : '📚';
-      const idx = history.indexOf(h);
       item.innerHTML = `
         <div class="history-left">
           <span class="history-date">${label}</span>
@@ -1358,7 +1614,7 @@
   }
 
   function quizRecentWords() {
-    const dates = getRecentDates();
+    const dates  = getRecentDates();
     const result = words.filter(w => w.addedAt && dates.includes(w.addedAt));
     if (result.length === 0) { showToast('Không có từ nào được thêm trong 3 ngày gần đây!'); return; }
     startQuiz(result.map(w => ({ en: w.en, vi: w.vi })));
@@ -1366,7 +1622,7 @@
 
   function updateQuickQuizCounts() {
     document.getElementById('quickAllCount').textContent = `${words.length} từ`;
-    const dates = getRecentDates();
+    const dates       = getRecentDates();
     const recentCount = words.filter(w => w.addedAt && dates.includes(w.addedAt)).length;
     document.getElementById('quickRecentCount').textContent = `${recentCount} từ`;
   }
@@ -1380,8 +1636,8 @@
   }
 
   function confirmClearHistory() {
-    history = [];
-    localStorage.removeItem('flashcard_history');
+    history.length = 0;
+    saveDecks();
     closeClearHistoryModal();
     renderHistory();
     showToast('Đã xóa lịch sử');
@@ -1392,9 +1648,9 @@
     if (words.length === 0) { showToast('Chưa có từ nào để tải!'); return; }
     const data = words.map(w => `${w.en} | ${w.vi} | ${w.addedAt || ''}`).join('\n');
     const blob = new Blob([data], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'flashcards.txt'; a.click();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `${getActiveDeck().name}.txt`; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -1404,16 +1660,18 @@
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const content = e.target.result;
-        let imported = [];
+        const content  = e.target.result;
+        let imported   = [];
         if (file.name.endsWith('.json')) {
           const parsed = JSON.parse(content);
           if (!Array.isArray(parsed)) throw new Error('invalid');
-          imported = parsed.filter(w => w.en && w.vi).map(w => ({ en: String(w.en).trim(), vi: String(w.vi).trim(), addedAt: w.addedAt || null }));
+          imported = parsed.filter(w => w.en && w.vi).map(w => ({
+            en: String(w.en).trim(), vi: String(w.vi).trim(), addedAt: w.addedAt || null
+          }));
         } else {
           const lines = content.split('\n').filter(l => l.trim());
           for (const line of lines) {
-            const parts = line.split('|');
+            const parts  = line.split('|');
             if (parts.length >= 2) {
               const addedAt = parts[2]?.trim().match(/^\d{4}-\d{2}-\d{2}$/) ? parts[2].trim() : null;
               imported.push({ en: parts[0].trim(), vi: parts[1].trim(), addedAt });
