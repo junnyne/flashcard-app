@@ -27,6 +27,21 @@
     --accent-a30: rgba(244,197,66,0.3);
   }
 
+  [data-theme="light"] {
+    --bg: #f5f3ee;
+    --card-bg: #ffffff;
+    --accent: #d4a017;
+    --accent2: #c05e3a;
+    --text: #1a1a2e;
+    --muted: #777788;
+    --border: #ddd8cc;
+    --green: #2e9e5a;
+    --red: #c03030;
+    --accent-hover: #e8b020;
+    --accent-a15: rgba(212,160,23,0.15);
+    --accent-a30: rgba(212,160,23,0.3);
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
@@ -40,6 +55,12 @@
     padding: 24px 16px;
     background-image: radial-gradient(ellipse at 20% 20%, #1e1a40 0%, transparent 60%),
                       radial-gradient(ellipse at 80% 80%, #2a1a1a 0%, transparent 60%);
+    transition: background 0.3s, color 0.3s;
+  }
+  [data-theme="light"] body,
+  body[data-theme="light"] {
+    background-image: radial-gradient(ellipse at 20% 20%, #e8e0f0 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, #f0e8e0 0%, transparent 60%);
   }
 
   h1 {
@@ -130,6 +151,71 @@
     justify-content: center;
   }
   .btn-help:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-theme {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-theme:hover { border-color: var(--accent); }
+
+  /* DASHBOARD */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+  .dash-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .dash-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .dash-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'Playfair Display', serif;
+  }
+  .dash-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* EDIT WORD */
+  .btn-edit {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
 
   .help-modal { max-width: 360px; }
   .help-section { margin-bottom: 14px; }
@@ -779,6 +865,7 @@
   <select class="deck-select" id="deckSelect" onchange="switchDeck(this.value)"></select>
   <button class="btn-deck-new" onclick="openNewDeckModal()">+ Deck</button>
   <button class="btn-deck-del" onclick="openDeleteDeckModal()">🗑</button>
+  <button class="btn-theme" id="themeBtn" onclick="toggleTheme()">🌙</button>
   <button class="btn-help" onclick="openHelpModal()">?</button>
 </div>
 
@@ -922,6 +1009,31 @@
 <!-- HISTORY PANEL -->
 <div class="history-panel" id="historyPanel">
   <div class="history-title">📋 Lịch sử kiểm tra</div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard">
+    <div class="dash-card">
+      <span class="dash-label">Tổng số từ</span>
+      <span class="dash-value" id="dashTotal">0</span>
+      <span class="dash-sub">trong deck này</span>
+    </div>
+    <div class="dash-card">
+      <span class="dash-label">Đã thuộc</span>
+      <span class="dash-value" id="dashLearned">0</span>
+      <span class="dash-sub" id="dashLearnedPct">0%</span>
+    </div>
+    <div class="dash-card">
+      <span class="dash-label">Đã ôn SR</span>
+      <span class="dash-value" id="dashSRDone">0</span>
+      <span class="dash-sub">từ có lịch ôn</span>
+    </div>
+    <div class="dash-card">
+      <span class="dash-label">Lượt kiểm tra</span>
+      <span class="dash-value" id="dashQuizCount">0</span>
+      <span class="dash-sub" id="dashAvgScore">TB: —</span>
+    </div>
+  </div>
+
   <div class="quick-quiz-cards">
     <div class="quick-quiz-card" onclick="quizAllWords()">
       <span class="quick-quiz-label">Ôn tập</span>
@@ -1005,6 +1117,23 @@
     <div class="modal-actions">
       <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeDeleteDeckModal()">Hủy</button>
       <button class="btn btn-danger" style="flex:1;padding:12px;" onclick="confirmDeleteDeck()">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT WORD MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">Sửa từ</div>
+    <div class="modal-field">
+      <input type="text" id="editEN" placeholder="Mặt trước" />
+    </div>
+    <div class="modal-field">
+      <input type="text" id="editVI" placeholder="Mặt sau" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" style="background:var(--card-bg);border:1px solid var(--border);color:var(--muted);" onclick="closeEditModal()">Hủy</button>
+      <button class="btn btn-add" style="flex:1;padding:12px;" onclick="confirmEdit()">Lưu</button>
     </div>
   </div>
 </div>
@@ -1351,6 +1480,8 @@
   document.getElementById('inputEN').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('inputVI').focus(); });
   document.getElementById('quizInput').addEventListener('keydown', e => { if(e.key==='Enter') checkQuiz(); });
   document.getElementById('newDeckName').addEventListener('keydown', e => { if(e.key==='Enter') confirmNewDeck(); });
+  document.getElementById('editVI').addEventListener('keydown', e => { if(e.key==='Enter') confirmEdit(); });
+  document.getElementById('editEN').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('editVI').focus(); });
 
   function renderList() {
     const list = document.getElementById('wordList');
@@ -1359,7 +1490,10 @@
       return;
     }
     list.innerHTML = '';
-    words.forEach((w, i) => {
+    // Hiển thị từ mới thêm lên đầu
+    const indices = [...words.keys()].reverse();
+    indices.forEach(i => {
+      const w = words[i];
       const item = document.createElement('div');
       item.className = 'word-item';
       item.innerHTML = `
@@ -1369,6 +1503,7 @@
         </div>
         <div class="word-actions">
           <span class="btn-check ${w.correct ? 'visible' : ''}" title="Đã kiểm tra đúng">✓</span>
+          <button class="btn-edit" onclick="openEditModal(${i})">✏️</button>
           <button class="btn btn-danger" onclick="removeWord(${i})">✕</button>
         </div>
       `;
@@ -1398,6 +1533,50 @@
     closeDeleteModal();
     showToast('Đã xóa thành công');
   }
+
+  // ── EDIT WORD ──
+  let pendingEditIdx = -1;
+
+  function openEditModal(i) {
+    pendingEditIdx = i;
+    document.getElementById('editEN').value = words[i].en;
+    document.getElementById('editVI').value = words[i].vi;
+    document.getElementById('editModal').classList.add('active');
+    setTimeout(() => document.getElementById('editEN').focus(), 100);
+  }
+
+  function closeEditModal() {
+    pendingEditIdx = -1;
+    document.getElementById('editModal').classList.remove('active');
+  }
+
+  function confirmEdit() {
+    if (pendingEditIdx < 0) return;
+    const en = document.getElementById('editEN').value.trim();
+    const vi = document.getElementById('editVI').value.trim();
+    if (!en || !vi) { showToast('Vui lòng nhập đầy đủ!'); return; }
+    words[pendingEditIdx].en = en;
+    words[pendingEditIdx].vi = vi;
+    saveWords();
+    renderList();
+    closeEditModal();
+    showToast('Đã lưu');
+  }
+
+  // ── THEME ──
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('themeBtn').textContent = theme === 'light' ? '☀️' : '🌙';
+    localStorage.setItem('flashcard_theme', theme);
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    applyTheme(current === 'light' ? 'dark' : 'light');
+  }
+
+  // Áp dụng theme đã lưu
+  applyTheme(localStorage.getItem('flashcard_theme') || 'dark');
 
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -1741,6 +1920,20 @@
     const today   = new Date().toISOString().slice(0, 10);
     const srCount = words.filter(w => !w.srNextReview || w.srNextReview <= today).length;
     document.getElementById('quickSRCount').textContent = `${srCount} từ`;
+    // Dashboard
+    const total   = words.length;
+    const learned = words.filter(w => w.correct).length;
+    const srDone  = words.filter(w => w.srNextReview).length;
+    const pct     = total ? Math.round(learned / total * 100) : 0;
+    const avgScore = history.length
+      ? Math.round(history.reduce((s, h) => s + h.pct, 0) / history.length)
+      : null;
+    document.getElementById('dashTotal').textContent    = total;
+    document.getElementById('dashLearned').textContent  = learned;
+    document.getElementById('dashLearnedPct').textContent = `${pct}% đã thuộc`;
+    document.getElementById('dashSRDone').textContent   = srDone;
+    document.getElementById('dashQuizCount').textContent = history.length;
+    document.getElementById('dashAvgScore').textContent  = avgScore !== null ? `TB: ${avgScore}%` : 'TB: —';
   }
 
   function clearHistory() {
