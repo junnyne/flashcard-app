@@ -111,6 +111,46 @@
     transition: all 0.2s;
     flex-shrink: 0;
   }
+
+  .btn-help {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-help:hover { border-color: var(--accent); color: var(--accent); }
+
+  .help-modal { max-width: 360px; }
+  .help-section { margin-bottom: 14px; }
+  .help-section-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .help-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .help-icon { flex-shrink: 0; }
   .btn-deck-del:hover { border-color: var(--red); color: var(--red); }
 
   /* TABS */
@@ -739,6 +779,7 @@
   <select class="deck-select" id="deckSelect" onchange="switchDeck(this.value)"></select>
   <button class="btn-deck-new" onclick="openNewDeckModal()">+ Deck</button>
   <button class="btn-deck-del" onclick="openDeleteDeckModal()">🗑</button>
+  <button class="btn-help" onclick="openHelpModal()">?</button>
 </div>
 
 <div class="tabs">
@@ -968,6 +1009,40 @@
   </div>
 </div>
 
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal help-modal">
+    <div class="modal-title">Hướng dẫn sử dụng</div>
+
+    <div class="help-section">
+      <div class="help-section-title">Các tab chính</div>
+      <div class="help-row"><span class="help-icon">➕</span><span><b>Thêm từ</b> — Nhập từ vựng mặt trước / mặt sau. Có thể tải file .txt hoặc .json.</span></div>
+      <div class="help-row"><span class="help-icon">📖</span><span><b>Học</b> — Lật thẻ, nghe phát âm, đánh giá Đã nhớ / Chưa nhớ.</span></div>
+      <div class="help-row"><span class="help-icon">✍️</span><span><b>Kiểm tra</b> — Gõ đáp án cho từ vừa học. Kết quả cập nhật lịch ôn tập.</span></div>
+      <div class="help-row"><span class="help-icon">📋</span><span><b>Lịch sử</b> — Xem lịch sử và ôn tập nhanh.</span></div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Ôn tập nhanh (tab Lịch sử)</div>
+      <div class="help-row"><span class="help-icon">📚</span><span><b>Tất cả từ</b> — Kiểm tra toàn bộ từ trong deck.</span></div>
+      <div class="help-row"><span class="help-icon">🕐</span><span><b>3 ngày gần nhất</b> — Từ được thêm trong 3 ngày gần đây.</span></div>
+      <div class="help-row"><span class="help-icon">🧠</span><span><b>Spaced Rep.</b> — Từ đến hạn ôn hôm nay. Đúng → lịch xa hơn, sai → ở lại hôm nay.</span></div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">Flow học hiệu quả</div>
+      <div class="help-row"><span class="help-icon">1️⃣</span><span>Thêm từ mới</span></div>
+      <div class="help-row"><span class="help-icon">2️⃣</span><span>Học lần đầu ở tab Học</span></div>
+      <div class="help-row"><span class="help-icon">3️⃣</span><span>Kiểm tra ngay ở tab Kiểm tra</span></div>
+      <div class="help-row"><span class="help-icon">4️⃣</span><span>Những ngày sau dùng Spaced Rep. để ôn lại</span></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-add" style="flex:1;padding:12px;" onclick="closeHelpModal()">Đã hiểu!</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1060,6 +1135,9 @@
     document.getElementById('newDeckModal').classList.add('active');
     setTimeout(() => document.getElementById('newDeckName').focus(), 100);
   }
+
+  function openHelpModal() { document.getElementById('helpModal').classList.add('active'); }
+  function closeHelpModal() { document.getElementById('helpModal').classList.remove('active'); }
 
   function closeNewDeckModal() {
     document.getElementById('newDeckModal').classList.remove('active');
