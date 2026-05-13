@@ -683,6 +683,12 @@
     <button class="btn btn-add" onclick="addWord()">+ Thêm</button>
   </div>
 
+  <div class="input-row">
+    <button class="btn" style="flex:1;background:var(--card-bg);border:1px solid var(--border);color:var(--text);font-size:0.82rem;" onclick="exportWords()">⬇ Tải file từ</button>
+    <label class="btn" style="flex:1;background:var(--card-bg);border:1px solid var(--border);color:var(--text);font-size:0.82rem;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;" for="importFile">⬆ Thêm file từ</label>
+    <input type="file" id="importFile" accept=".txt,.json,.csv" style="display:none" onchange="importWords(event)">
+  </div>
+
   <div class="word-list" id="wordList">
     <p class="empty-msg" id="emptyMsg">Chưa có từ nào. Hãy thêm từ vựng bên trên! 📝</p>
   </div>
@@ -765,7 +771,7 @@
     <label style="font-size:0.8rem; color:var(--muted);">Gõ từ tiếng Anh:</label>
     <div style="display:flex; gap:8px;">
       <input type="text" id="quizInput" placeholder="Nhập tiếng Anh..." autocomplete="off" autocorrect="off" spellcheck="false" />
-      <button class="btn btn-add" onclick="checkQuiz()">✓</button>
+      <button class="btn btn-add" id="quizCheckBtn" onclick="checkQuiz()">✓</button>
     </div>
     <div id="quizFeedback" style="min-height:28px; font-size:0.9rem; text-align:center; border-radius:8px; padding:4px 0; transition:all 0.2s; word-break:break-word;"></div>
   </div>
@@ -851,7 +857,6 @@
   let totalCards = 0;
   let roundStart = 0, roundEnd = 0;
   let isFlipped = false;
-  let known = 0, unknown = 0;
 
   // Quiz state
   let knownWords = []; // words marked as known → go to quiz
@@ -863,6 +868,7 @@
   let quizAnswered = false;
   let quizDone = false;
   let studyDone = false;
+  let quizAutoTimer = null;
 
   // ── SPEECH ──
   function speak(text, lang) {
@@ -891,11 +897,6 @@
     setTimeout(() => { btn.classList.remove('speaking'); btn.textContent = '🔊 Nghe phát âm'; }, 2000);
   }
 
-  function speakQuizVI() {
-    const item = quizQueue[quizCurrent]; if (!item) return;
-    speak(item.vi, 'vi-VN');
-  }
-
   // ── TABS ──
   function switchTab(tab) {
     if (tab === 'study') {
@@ -910,7 +911,9 @@
     }
     if (tab === 'quiz') {
       if (quizDone) {
-        showToast('Bạn đã hoàn thành kiểm tra rồi!');
+        hideAll();
+        document.getElementById('quizResultPanel').classList.add('active');
+        document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===2));
       } else if (knownWords.length > 0) {
         startQuiz(knownWords);
       } else {
@@ -940,7 +943,7 @@
     if (!en && !vi) { showToast('Vui lòng nhập đầy đủ!'); return; }
     if (!en) { showToast('Vui lòng nhập từ tiếng Anh!'); return; }
     if (!vi) { showToast('Vui lòng nhập nghĩa tiếng Việt!'); return; }
-    const word = { en, vi };
+    const word = { en, vi, addedAt: new Date().toISOString().slice(0, 10) };
     words.push(word);
     document.getElementById('inputEN').value = '';
     document.getElementById('inputVI').value = '';
@@ -1120,12 +1123,9 @@
 
   function answer(didKnow) {
     if (didKnow) {
-      known++;
-      // Add to knownWords (avoid duplicates by en)
       const w = queue[current];
       if (!knownWords.find(x => x.en === w.en)) knownWords.push({ en: w.en, vi: w.vi });
     } else {
-      unknown++;
       queue.push({ ...queue[current] });
     }
     current++;
@@ -1179,6 +1179,7 @@
 
   function showQuizCard() {
     if (quizCurrent >= quizQueue.length) { showQuizResult(); return; }
+    clearTimeout(quizAutoTimer);
     quizAnswered = false;
     const item = quizQueue[quizCurrent];
     document.getElementById('quizVI').textContent = item.vi;
@@ -1188,6 +1189,7 @@
     document.getElementById('quizFeedback').style.background = '';
     document.getElementById('quizInput').style.borderColor = '';
     document.getElementById('quizInput').disabled = false;
+    document.getElementById('quizCheckBtn').textContent = '✓';
     document.getElementById('quizInput').focus();
     const total = quizQueue.length;
     const pct = total ? (quizCurrent / total * 100) : 0;
@@ -1197,7 +1199,10 @@
   }
 
   function checkQuiz() {
-    if (quizAnswered) { quizCurrent++; showQuizCard(); return; }
+    if (quizAnswered) {
+      clearTimeout(quizAutoTimer);
+      quizCurrent++; showQuizCard(); return;
+    }
     const item = quizQueue[quizCurrent];
     const input = document.getElementById('quizInput').value.trim().toLowerCase();
     const correct = item.en.toLowerCase();
@@ -1224,7 +1229,11 @@
     }
     quizAnswered = true;
     inp.disabled = true;
-    setTimeout(() => { quizCurrent++; showQuizCard(); }, 1600);
+    document.getElementById('quizCheckBtn').textContent = '→';
+    // delay tỉ lệ với độ dài chữ: tối thiểu 1800ms, +55ms mỗi ký tự của VI + feedback
+    const totalChars = item.vi.length + fb.textContent.length;
+    const delay = Math.min(Math.max(1800, totalChars * 55), 5000);
+    quizAutoTimer = setTimeout(() => { quizCurrent++; showQuizCard(); }, delay);
   }
 
   function skipQuiz() {
@@ -1239,6 +1248,7 @@
   }
 
   function hintQuiz() {
+    if (quizAnswered) return;
     const item = quizQueue[quizCurrent];
     const w = words.find(x => x.en === item.en);
     const fb = document.getElementById('quizFeedback');
@@ -1338,37 +1348,27 @@
     startQuiz(words.map(w => ({ en: w.en, vi: w.vi })));
   }
 
-  function quizRecentWords() {
+  function getRecentDates() {
     const today = new Date();
-    const dates = [0, 1, 2].map(n => {
+    return [0, 1, 2].map(n => {
       const d = new Date(today);
       d.setDate(today.getDate() - n);
       return d.toISOString().slice(0, 10);
     });
-    const seen = new Set();
-    const result = [];
-    history.filter(h => dates.includes(h.date)).forEach(h => {
-      (h.words || []).forEach(w => {
-        if (!seen.has(w.en)) { seen.add(w.en); result.push({ en: w.en, vi: w.vi }); }
-      });
-    });
-    if (result.length === 0) { showToast('Không có từ nào trong 3 ngày gần đây!'); return; }
-    startQuiz(result);
+  }
+
+  function quizRecentWords() {
+    const dates = getRecentDates();
+    const result = words.filter(w => w.addedAt && dates.includes(w.addedAt));
+    if (result.length === 0) { showToast('Không có từ nào được thêm trong 3 ngày gần đây!'); return; }
+    startQuiz(result.map(w => ({ en: w.en, vi: w.vi })));
   }
 
   function updateQuickQuizCounts() {
     document.getElementById('quickAllCount').textContent = `${words.length} từ`;
-    const today = new Date();
-    const dates = [0, 1, 2].map(n => {
-      const d = new Date(today);
-      d.setDate(today.getDate() - n);
-      return d.toISOString().slice(0, 10);
-    });
-    const seen = new Set();
-    history.filter(h => dates.includes(h.date)).forEach(h => {
-      (h.words || []).forEach(w => seen.add(w.en));
-    });
-    document.getElementById('quickRecentCount').textContent = `${seen.size} từ`;
+    const dates = getRecentDates();
+    const recentCount = words.filter(w => w.addedAt && dates.includes(w.addedAt)).length;
+    document.getElementById('quickRecentCount').textContent = `${recentCount} từ`;
   }
 
   function clearHistory() {
@@ -1385,6 +1385,57 @@
     closeClearHistoryModal();
     renderHistory();
     showToast('Đã xóa lịch sử');
+  }
+
+  // ── IMPORT / EXPORT ──
+  function exportWords() {
+    if (words.length === 0) { showToast('Chưa có từ nào để tải!'); return; }
+    const data = words.map(w => `${w.en} | ${w.vi} | ${w.addedAt || ''}`).join('\n');
+    const blob = new Blob([data], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'flashcards.txt'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importWords(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target.result;
+        let imported = [];
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(content);
+          if (!Array.isArray(parsed)) throw new Error('invalid');
+          imported = parsed.filter(w => w.en && w.vi).map(w => ({ en: String(w.en).trim(), vi: String(w.vi).trim(), addedAt: w.addedAt || null }));
+        } else {
+          const lines = content.split('\n').filter(l => l.trim());
+          for (const line of lines) {
+            const parts = line.split('|');
+            if (parts.length >= 2) {
+              const addedAt = parts[2]?.trim().match(/^\d{4}-\d{2}-\d{2}$/) ? parts[2].trim() : null;
+              imported.push({ en: parts[0].trim(), vi: parts[1].trim(), addedAt });
+            }
+          }
+        }
+        let added = 0;
+        for (const w of imported) {
+          if (w.en && w.vi && !words.find(x => x.en.toLowerCase() === w.en.toLowerCase())) {
+            words.push({ en: w.en, vi: w.vi, addedAt: w.addedAt || new Date().toISOString().slice(0, 10) });
+            added++;
+          }
+        }
+        saveWords();
+        renderList();
+        showToast(added > 0 ? `Đã nhập ${added} từ mới!` : 'Không có từ mới nào (đã tồn tại hết).');
+      } catch (_) {
+        showToast('Lỗi: File không đúng định dạng!');
+      }
+      event.target.value = '';
+    };
+    reader.readAsText(file, 'UTF-8');
   }
 
   // ── SHARED ──
