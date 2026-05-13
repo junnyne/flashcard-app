@@ -1504,7 +1504,7 @@
       const ww = words.find(x => x.en === item.en);
       if (ww) {
         ww.learned = false; ww.correct = false;
-        if (srMode) { ww.srInterval = 1; const next = new Date(); next.setDate(next.getDate() + 1); ww.srNextReview = next.toISOString().slice(0, 10); }
+        if (srMode) { ww.srInterval = 1; ww.srNextReview = new Date().toISOString().slice(0, 10); }
         saveWords(); renderList();
       }
       fb.textContent = `✗ Sai! Đáp án đúng: "${item.en}"`;
@@ -1528,7 +1528,7 @@
     const ww = words.find(x => x.en === item.en);
     if (ww) {
       ww.learned = false; ww.correct = false;
-      if (srMode) { ww.srInterval = 1; const next = new Date(); next.setDate(next.getDate() + 1); ww.srNextReview = next.toISOString().slice(0, 10); }
+      if (srMode) { ww.srInterval = 1; ww.srNextReview = new Date().toISOString().slice(0, 10); }
       saveWords(); renderList();
     }
     quizCurrent++;
