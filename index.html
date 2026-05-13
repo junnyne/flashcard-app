@@ -169,40 +169,6 @@
   }
   .btn-theme:hover { border-color: var(--accent); }
 
-  /* DASHBOARD */
-  .dashboard {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 16px;
-    width: 100%;
-  }
-  .dash-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .dash-label {
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .dash-value {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--accent);
-    font-family: 'Playfair Display', serif;
-  }
-  .dash-sub {
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
-
   /* EDIT WORD */
   .btn-edit {
     background: transparent;
@@ -1016,30 +982,6 @@
 <!-- HISTORY PANEL -->
 <div class="history-panel" id="historyPanel">
   <div class="history-title">📋 Lịch sử kiểm tra</div>
-
-  <!-- DASHBOARD -->
-  <div class="dashboard">
-    <div class="dash-card">
-      <span class="dash-label">Tổng số từ</span>
-      <span class="dash-value" id="dashTotal">0</span>
-      <span class="dash-sub">trong deck này</span>
-    </div>
-    <div class="dash-card">
-      <span class="dash-label">Đã thuộc</span>
-      <span class="dash-value" id="dashLearned">0</span>
-      <span class="dash-sub" id="dashLearnedPct">0%</span>
-    </div>
-    <div class="dash-card">
-      <span class="dash-label">Đã ôn SR</span>
-      <span class="dash-value" id="dashSRDone">0</span>
-      <span class="dash-sub">từ có lịch ôn</span>
-    </div>
-    <div class="dash-card">
-      <span class="dash-label">Lượt kiểm tra</span>
-      <span class="dash-value" id="dashQuizCount">0</span>
-      <span class="dash-sub" id="dashAvgScore">TB: —</span>
-    </div>
-  </div>
 
   <div class="quick-quiz-cards">
     <div class="quick-quiz-card" onclick="quizAllWords()">
@@ -1927,20 +1869,6 @@
     const today   = new Date().toISOString().slice(0, 10);
     const srCount = words.filter(w => !w.srNextReview || w.srNextReview <= today).length;
     document.getElementById('quickSRCount').textContent = `${srCount} từ`;
-    // Dashboard
-    const total   = words.length;
-    const learned = words.filter(w => w.correct).length;
-    const srDone  = words.filter(w => w.srNextReview).length;
-    const pct     = total ? Math.round(learned / total * 100) : 0;
-    const avgScore = history.length
-      ? Math.round(history.reduce((s, h) => s + h.pct, 0) / history.length)
-      : null;
-    document.getElementById('dashTotal').textContent    = total;
-    document.getElementById('dashLearned').textContent  = learned;
-    document.getElementById('dashLearnedPct').textContent = `${pct}% đã thuộc`;
-    document.getElementById('dashSRDone').textContent   = srDone;
-    document.getElementById('dashQuizCount').textContent = history.length;
-    document.getElementById('dashAvgScore').textContent  = avgScore !== null ? `TB: ${avgScore}%` : 'TB: —';
   }
 
   function clearHistory() {
